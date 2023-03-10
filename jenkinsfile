@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+    environment {
+        dockerImage = ''
+        registryCredentials = 'dockerhubid'
+        registry = 'pavaniyadav219/keyapps'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/pavaniyadav/javaapp.git']])
+            }
+        }
+        stage('ImageBuild') {
+            steps {
+                script{
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                }
+                
+            }
+        }
+        stage('PushImage') {
+            steps {
+                script{
+                    docker.withRegistry ('', registryCredentials) {
+                        dockerImage.push ()
+                    }
+                }
+                
+            }
+        }
+        stage('clean image') {
+            steps {
+               sh "docker rmi $registry:$BUILD_NUMBER"
+            }
+        } 
+    }
+}
